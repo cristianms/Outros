@@ -1,0 +1,213 @@
+<html>
+<head>
+    <title>teste</title>
+    <style>
+        canvas {
+            position: absolute;
+            top: 0px;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+<script>
+
+    //inicia variaveis
+    {
+        var canvasElemento;
+        var larguraCanvas;
+        var alturaCanvas;
+        var contexto;
+        var frames = 0;
+        var velocidade = 10;
+        var velocidadeBarras = 50;
+    }
+    var pontoMarcado = false;
+    var fundo = {
+        larguraLinhaMeioCampo: 3,
+        raioCirculo: 80,
+        raioCirculoPeq: 5,
+        desenhar: function () {
+            //pintando fundo de preto
+            contexto.fillStyle = "#000";
+            contexto.fillRect(0, 0, larguraCanvas, alturaCanvas);
+
+            //risco centro
+            contexto.fillStyle = "white";
+            contexto.fillRect((larguraCanvas / 2) - (this.larguraLinhaMeioCampo / 2), 0, this.larguraLinhaMeioCampo, alturaCanvas);
+
+//            //desenha circulo meio campo
+//            contexto.beginPath();
+//            contexto.arc(larguraCanvas / 2, alturaCanvas / 2, this.raioCirculo, 0, 2 * Math.PI);
+//            contexto.lineWidth = this.larguraLinhaMeioCampo;
+//            contexto.strokeStyle = 'white';
+//            contexto.stroke();
+
+            //desenha bolinha meio do campo
+            contexto.beginPath();
+            contexto.arc(larguraCanvas / 2, alturaCanvas / 2, this.raioCirculoPeq, 0, 2 * Math.PI);
+            contexto.lineWidth = this.larguraLinhaMeioCampo * 3;
+            contexto.strokeStyle = '#FFF';
+            contexto.stroke();
+        }
+    };
+    var bloco = {
+        x: 20,
+        y: 0,
+        largura: 50,
+        altura: 50,
+        andandoDireita: true,
+        andandoBaixo: true,
+        desenhar: function () {
+            if(pontoMarcado) {
+                this.x = 20;
+                this.y = 0;
+            }
+            contexto.fillStyle = "white";
+            contexto.fillRect(this.x, this.y, this.largura, this.altura);
+        },
+        atualizar: function () {
+            if (this.andandoDireita) { //indo p direita
+                if ((this.x + this.largura) >= (larguraCanvas - placa.largura) && this.y <= placaDireita.y + placa.altura && this.y + this.altura >= placaDireita.y) {
+                    this.x -= velocidade;
+                    this.andandoDireita = false;
+                } else if ((this.x + this.largura) >= larguraCanvas) { //colidiu parede
+                    //ponto player 1
+                    placar.totalPlayer1 += 1;
+                    pontoMarcado = true;
+                } else {
+                    this.x += velocidade;
+                }
+            } else { //indo p esquerda
+                if (this.x <= placa.largura && this.y <= placaEsquerda.y + placa.altura && this.y + this.altura >= placaEsquerda.y) { //colidiu com a placa
+                    this.x += velocidade;
+                    this.andandoDireita = true;
+                } else if (this.x <= 0) { //colidiu parede
+                    //ponto player 2
+                    placar.totalPlayer2 += 1;
+                    pontoMarcado = true;
+                } else {
+                    this.x -= velocidade;
+                }
+            }
+
+            if (this.andandoBaixo) {
+                if ((this.y + this.altura) >= alturaCanvas) {
+                    this.y -= velocidade;
+                    this.andandoBaixo = false;
+                } else {
+                    this.y += velocidade;
+                }
+            } else {
+                if (this.y <= 0) {
+                    this.y += velocidade;
+                    this.andandoBaixo = true;
+                } else {
+                    this.y -= velocidade;
+                }
+            }
+        }
+    };
+    var placa = {
+        largura: 20,
+        altura: 150
+    };
+    var placaEsquerda = {
+        y: 0,
+        desenhar: function () {
+            contexto.fillStyle = "lightgrey";
+            contexto.fillRect(0, this.y, placa.largura, placa.altura);
+        },
+        subir: function () {
+            this.y += velocidadeBarras;
+        },
+        descer: function () {
+            this.y -= velocidadeBarras;
+        }
+    };
+    var placaDireita = {
+        y: 0,
+        desenhar: function () {
+            contexto.fillStyle = "lightgrey";
+            contexto.fillRect(larguraCanvas - placa.largura, this.y, placa.largura, placa.altura);
+        },
+        subir: function () {
+            this.y += velocidadeBarras;
+        },
+        descer: function () {
+            this.y -= velocidadeBarras;
+        }
+    };
+    var placar = {
+        totalPlayer1: 0,
+        totalPlayer2: 0,
+        desenharPlacarGeral: function () {
+            contexto.fillStyle = "lightgrey";
+            contexto.font = "20px Verdana";
+            contexto.fillText("Player1: " + this.totalPlayer1 + " ponto(s)", larguraCanvas / 4 - 120, 20);
+            contexto.fillText("Player2: " + this.totalPlayer2 + " ponto(s)", larguraCanvas / 4 * 3 - 120, 20);
+        }
+    };
+
+    function inicializar() {
+        larguraCanvas = window.innerWidth - 10;
+        alturaCanvas = window.innerHeight - 10;
+
+        canvasElemento = document.createElement("canvas");
+        canvasElemento.width = larguraCanvas;
+        canvasElemento.height = alturaCanvas;
+        canvasElemento.style.border = ".5px solid black";
+        document.body.appendChild(canvasElemento);
+        contexto = canvasElemento.getContext("2d");
+
+        document.addEventListener("keydown", movimentarPlaca);
+
+        iniciaLoop();
+    }
+
+
+    function iniciaLoop() {
+        if(!pontoMarcado) {
+            desenharTudo();
+            atualizaTela();
+            window.requestAnimationFrame(iniciaLoop);
+        } else if(confirm("Ponto marcado. \nContinuar?")) {
+            desenharTudo();
+            pontoMarcado = false;
+            atualizaTela();
+            window.requestAnimationFrame(iniciaLoop);
+        }
+    }
+
+    function atualizaTela() {
+        frames++;
+        bloco.atualizar();
+    }
+
+    function desenharTudo() {
+        fundo.desenhar();
+        placaEsquerda.desenhar();
+        placaDireita.desenhar();
+        bloco.desenhar();
+        placar.desenharPlacarGeral();
+    }
+
+    function movimentarPlaca(evento) {
+        if (evento.keyCode == 83) {         //up left (w)
+            placaEsquerda.subir();
+        } else if (evento.keyCode == 87) {  //down left (s)
+            placaEsquerda.descer();
+        } else if (evento.keyCode == 40) {  //up right (seta cima)
+            placaDireita.subir();
+        } else if (evento.keyCode == 38) {  //down right (seta baixo)
+            placaDireita.descer();
+        }
+    }
+
+    inicializar();
+</script>
+</body>
+</html>
